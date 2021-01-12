@@ -24,13 +24,13 @@ public class ViewCommand implements BbsCommandImpl{
 		SpringBbsDTO dto = new SpringBbsDTO();
 		dto = dao.view(idx);
 		
-		if(dto!=null) {
+		if(dto.getContents()!=null) {
 			//줄바꿈 처리위해 <br/>로 변경
-			dto.setContents(dto.getContents().replace("\r\n", "<br/>"));			
+			dto.setContents(dto.getContents().replace("\r\n", "<br/>"));
+			model.addAttribute("viewRow", dto);
+			model.addAttribute("nowPage", nowPage);
 		}
 		
-		model.addAttribute("viewRow", dto);
-		model.addAttribute("nowPage", nowPage);
 		
 	}
 }

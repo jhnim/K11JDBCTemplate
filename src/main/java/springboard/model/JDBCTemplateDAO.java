@@ -70,17 +70,19 @@ public class JDBCTemplateDAO {
 		//쿼리문에서 count(*)를 통해 반환하는 값을 정수형태로 반환한다.
 		return template.queryForObject(sql, Integer.class);
 	}
+	
 	//게시판 리스트 가져오기(페이지처리x)
 	public ArrayList<SpringBbsDTO> list(Map<String, Object> map){
 		
 		String sql = " "
 				+ "SELECT * FROM springboard ";
-			if(map.get("Word")!=null) {
-				sql +=" WHERE "+map.get("Column")+" "
+		if(map.get("Word")!=null) {
+			sql +=" WHERE "+map.get("Column")+" "
 					+ "	LIKE '%"+map.get("Word")+"%' ";
-			}			
-			sql += " ORDER BY idx DESC";
-			
+		}			
+		//sql += " ORDER BY idx DESC"; //일반게시판의 정렬방법
+		sql += " ORDER BY bgroup DESC, bstep ASC"; //답변형일떄 정렬방법
+		
 		/*
 		 RowMapper 객체가 select를 통해 얻어온 ResultSet을 DTO객체에 저장하고 List컬렉션에 적재하여 반환하게 된다.
 		 */
@@ -204,6 +206,81 @@ public class JDBCTemplateDAO {
 				
 				ps.setString(1, idx);
 				ps.setString(2, pass);
+			}
+		});
+	}
+	
+	//답변글 입력
+	public void reply(final SpringBbsDTO dto) {
+		
+		//답변글을 입력하기 전 일괄 업데이트 처리
+		replyPrevUpdate(dto.getBgroup(), dto.getBstep());
+		
+		//write와 다른 점은 bgroup에 기존게시물의 번호가 들어가는 것이다.
+		String sql = "INSERT INTO springboard "
+				+ "	(idx, name, title, contents, pass, "
+				+ "	bgroup, bstep, bindent)	"
+				+ "	VALUES "
+				+ "	(springboard_seq.nextval, ?, ?, ?, ?,"
+				+ " ?, ?, ?)";
+		
+		template.update(sql, new PreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				
+				ps.setString(1, dto.getName());
+				ps.setString(2, dto.getTitle());
+				ps.setString(3, dto.getContents());
+				ps.setString(4, dto.getPass());
+				
+				//원본글의 group번호를 입력
+				ps.setInt(5, dto.getBgroup());
+				//원본글의 step, indent에 +1한 후 입력
+				ps.setInt(6, dto.getBstep()+1);
+				ps.setInt(7, dto.getBindent()+1);
+				
+			}
+		});
+	}
+	
+	//리스트처리(페이지ㅇ)
+	public ArrayList<SpringBbsDTO> listPage(Map<String, Object> map){
+		
+		int start = Integer.parseInt(map.get("start").toString());
+		int end = Integer.parseInt(map.get("end").toString());
+		
+		String sql = ""
+				+"SELECT * FROM ("
+				+"    SELECT Tb.*, rownum rNum FROM ("
+				+"        SELECT * FROM springboard ";				
+		
+		if(map.get("Word")!=null){
+				sql +=" WHERE "+map.get("Column")+" "
+					+ " LIKE '%"+map.get("Word")+"%' ";				
+			}			
+				sql += " ORDER BY bgroup DESC, bstep ASC"
+				+"    ) Tb"
+				+")"
+				+" WHERE rNum BETWEEN "+start+" and "+end;
+		
+		return (ArrayList<SpringBbsDTO>)template.query(sql, new BeanPropertyRowMapper<SpringBbsDTO>(SpringBbsDTO.class));
+	}
+	
+	/*
+	 답변글을 입력하기 전에 현재 step보다 큰 게시물들을 일괄적으로 
+	 step+1해서 뒤로 밀어주는 작업을 진행한다.
+	 */
+	public void replyPrevUpdate(final int strGroup, final int strStep) {
+		
+		String sql = "UPDATE springboard "
+				+ "	SET bstep = bstep+1 "
+				+ "	WHERE bgroup=? AND bstep>?";
+		template.update(sql, new PreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				
+				ps.setInt(1, strGroup);
+				ps.setInt(2, strStep);				
 			}
 		});
 	}

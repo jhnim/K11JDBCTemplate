@@ -17,7 +17,7 @@
 <div class="container">
 	
 	<h2>비회원제 답변형 게시판</h2>
-	<h3>전체페이지:${totalPage } / 현제페이지:${nowPage }</h3>
+	<h3>전체페이지:${totalPage } / 현재페이지:${nowPage }</h3>
 
 	<!-- 검색폼 -->
 	<form method="get">
@@ -82,6 +82,13 @@
 				</c:forEach>
 			</c:otherwise>
 		</c:choose>
+	</table>
+	<table border="1" width="90%">
+		<tr>
+			<td align="center">
+				${pagingImg }
+			</td>
+		</tr>	
 	</table>
 </div>
   
