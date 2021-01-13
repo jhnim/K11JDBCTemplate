@@ -170,6 +170,7 @@ public class BbsController {
 	//답변글 작성폼
 	@RequestMapping("/board/reply.do")
 	public String reply(HttpServletRequest req, Model model) {
+		
 		System.out.println("reply()메소드 호출");
 		
 		model.addAttribute("req", req);
